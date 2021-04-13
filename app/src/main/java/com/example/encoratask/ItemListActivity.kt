@@ -1,19 +1,14 @@
 package com.example.encoratask
 
-import android.content.Intent
 import android.os.Bundle
-import androidx.core.widget.NestedScrollView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.RecyclerView
 import androidx.appcompat.widget.Toolbar
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.TextView
-
-import com.example.encoratask.dummy.DummyContent
+import java.util.ArrayList
 
 /**
  * An activity representing a list of Pings. This activity
@@ -23,12 +18,15 @@ import com.example.encoratask.dummy.DummyContent
  * item details. On tablets, the activity presents the list of items and
  * item details side-by-side using two vertical panes.
  */
-class ItemListActivity : AppCompatActivity() {
+class ItemListActivity : AppCompatActivity(), CharacterListMvp.View {
 
     /**
      * Whether or not the activity is in two-pane mode, i.e. running on a tablet
      * device.
      */
+
+    lateinit var presenter: CharacterListMvp.Presenter
+    lateinit var recyclerView : RecyclerView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,50 +41,30 @@ class ItemListActivity : AppCompatActivity() {
                     .setAction("Action", null).show()
         }
 
-        setupRecyclerView(findViewById(R.id.item_list))
-    }
-
-    private fun setupRecyclerView(recyclerView: RecyclerView) {
-        recyclerView.adapter = SimpleItemRecyclerViewAdapter(DummyContent.ITEMS)
-    }
-
-    class SimpleItemRecyclerViewAdapter(private val values: List<DummyContent.DummyItem>) :
-            RecyclerView.Adapter<SimpleItemRecyclerViewAdapter.ViewHolder>() {
-
-        private val onClickListener: View.OnClickListener
-
-        init {
-            onClickListener = View.OnClickListener { v ->
-                val item = v.tag as DummyContent.DummyItem
-                val intent = Intent(v.context, ItemDetailActivity::class.java).apply {
-                    putExtra(ItemDetailFragment.ARG_ITEM_ID, item.id)
+        recyclerView = findViewById(R.id.item_list)
+        recyclerView.layoutManager = GridLayoutManager(this, 3)
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                if (!recyclerView.canScrollVertically(1) && recyclerView.adapter is CharacterAdapter) {
+                    presenter.onScrolledToBottom((recyclerView.adapter as CharacterAdapter).characters)
                 }
-                v.context.startActivity(intent)
             }
-        }
+        })
+        presenter = CharacterListPresenter(this, CharacterListModel())
+        presenter.init()
+    }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.item_list_content, parent, false)
-            return ViewHolder(view)
-        }
 
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val item = values[position]
-            holder.idView.text = item.id
-            holder.contentView.text = item.content
+    override fun showCharacters(characters: List<Character>?) {
+        recyclerView.adapter = CharacterAdapter(ArrayList(characters))
+    }
 
-            with(holder.itemView) {
-                tag = item
-                setOnClickListener(onClickListener)
-            }
-        }
+    override fun notifyCharactersAdded(from: Int, size: Int) {
+        recyclerView.adapter?.notifyItemRangeInserted(from, size)
+    }
 
-        override fun getItemCount() = values.size
-
-        inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            val idView: TextView = view.findViewById(R.id.id_text)
-            val contentView: TextView = view.findViewById(R.id.content)
-        }
+    override fun scrollToPosition(position: Int) {
+        recyclerView.smoothScrollToPosition(position)
     }
 }
