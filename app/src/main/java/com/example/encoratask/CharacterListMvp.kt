@@ -9,16 +9,12 @@ interface CharacterListMvp {
     }
 
     interface Model {
-        fun loadCharacters(callback : Callback<List<Character>?>, errorCallback : Callback<Throwable>?)
-        fun loadNextPage(callback : Callback<List<Character>?>, errorCallback : Callback<Throwable>?)
+        fun loadCharacters(callback : (List<Character>?) -> Unit, errorCallback : (Throwable?) -> Unit = {})
+        fun loadNextPage(callback : (List<Character>?) -> Unit, errorCallback : (Throwable?) -> Unit = {})
     }
 
     interface Presenter {
         fun init()
         fun onScrolledToBottom(currentCharacters : MutableList<Character>)
-    }
-
-    interface Callback<T> {
-        fun call(param: T)
     }
 }

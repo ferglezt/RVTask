@@ -13,23 +13,23 @@ class CharacterListModel : CharacterListMvp.Model {
     var cachedResponse : CharacterResponse? = null
     var currentPage : Int = 1;
 
-    override fun loadCharacters(callback : CharacterListMvp.Callback<List<Character>?>, errorCallback : CharacterListMvp.Callback<Throwable>?) {
+    override fun loadCharacters(callback : (List<Character>?) -> Unit, errorCallback : (Throwable?) -> Unit) {
         loadCharacters(currentPage, callback, errorCallback)
     }
 
-    override fun loadNextPage(callback: CharacterListMvp.Callback<List<Character>?>, errorCallback: CharacterListMvp.Callback<Throwable>?) {
+    override fun loadNextPage(callback : (List<Character>?) -> Unit, errorCallback : (Throwable?) -> Unit) {
         loadCharacters(++currentPage, callback, errorCallback)
     }
 
-    private fun loadCharacters(page: Int, callback : CharacterListMvp.Callback<List<Character>?>, errorCallback : CharacterListMvp.Callback<Throwable>?) {
+    private fun loadCharacters(page: Int, callback : (List<Character>?) -> Unit, errorCallback : (Throwable?) -> Unit) {
         val call = getCharacterService().listCharacters(page)
         call.enqueue(object : Callback<CharacterResponse> {
             override fun onResponse(call: Call<CharacterResponse>, response: Response<CharacterResponse>) {
                 cachedResponse = response.body()
-                callback.call(cachedResponse?.results)
+                callback(cachedResponse?.results)
             }
             override fun onFailure(call: Call<CharacterResponse>, t: Throwable) {
-                errorCallback?.call(t)
+                errorCallback(t)
             }
         })
     }
